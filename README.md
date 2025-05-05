@@ -8,7 +8,7 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
         th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
         input { width: 100%; padding: 8px; }
-        button { margin-top: 20px; padding: 10px 20px; font-size: 16px; }
+        button { margin-top: 10px; padding: 10px 20px; font-size: 16px; margin-right: 5px; }
         #results { margin-top: 30px; background: #fff; padding: 15px; border: 1px solid #ccc; white-space: pre-line; }
     </style>
 </head>
@@ -17,33 +17,55 @@
 <h2>مطابقة جماعية للأرصدة</h2>
 
 <table id="dataTable">
-    <tr>
-        <th>الطرف الأول</th>
-        <th>الطرف الثاني</th>
-        <th>دائن</th>
-        <th>مدين</th>
-    </tr>
-    <tr>
-        <td><input type="text" placeholder="شركة A"></td>
-        <td><input type="text" placeholder="شركة B"></td>
-        <td><input type="number" placeholder="8000"></td>
-        <td><input type="number" placeholder="12000"></td>
-    </tr>
+    <thead>
+        <tr>
+            <th>الطرف الأول</th>
+            <th>الطرف الثاني</th>
+            <th>دائن</th>
+            <th>مدين</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><input type="text" value="شركة برسان" readonly></td>
+            <td><input type="text" value="أبو قصي" readonly></td>
+            <td><input type="number" placeholder="8000"></td>
+            <td><input type="number" placeholder="12000"></td>
+        </tr>
+    </tbody>
 </table>
 
 <button onclick="addRow()">➕ أضف عملية جديدة</button>
 <button onclick="calculateAll()">✅ احسب الكل</button>
+<button onclick="printResults()">🖨️ طباعة PDF</button>
 
 <div id="results"></div>
 
 <script>
 function addRow() {
-    let table = document.getElementById("dataTable");
-    let row = table.insertRow();
+    let tableBody = document.getElementById("dataTable").getElementsByTagName("tbody")[0];
+    let newRow = document.createElement("tr");
+
+    const names = ["شركة برسان", "أبو قصي"];
+
     for (let i = 0; i < 4; i++) {
-        let cell = row.insertCell(i);
-        cell.innerHTML = '<input type="text">';
+        let newCell = document.createElement("td");
+        let input = document.createElement("input");
+
+        if (i < 2) {
+            input.type = "text";
+            input.value = names[i];
+            input.readOnly = true;
+        } else {
+            input.type = "number";
+            input.placeholder = i === 2 ? "8000" : "12000";
+        }
+
+        newCell.appendChild(input);
+        newRow.appendChild(newCell);
     }
+
+    tableBody.appendChild(newRow);
 }
 
 function calculateAll() {
@@ -51,14 +73,15 @@ function calculateAll() {
     let results = '';
     let now = new Date().toLocaleString('ar-EG');
 
-    for (let i = 1; i < table.rows.length; i++) {
-        let cells = table.rows[i].getElementsByTagName("input");
-        let c1 = cells[0].value || "الطرف الأول";
-        let c2 = cells[1].value || "الطرف الثاني";
-        let credit = parseFloat(cells[2].value) || 0;
-        let debit = parseFloat(cells[3].value) || 0;
+    const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+    for (let i = 0; i < rows.length; i++) {
+        const inputs = rows[i].getElementsByTagName("input");
+        let c1 = inputs[0].value;
+        let c2 = inputs[1].value;
+        let credit = parseFloat(inputs[2].value) || 0;
+        let debit = parseFloat(inputs[3].value) || 0;
 
-        results += `📌 عملية ${i} - (${now})\n`;
+        results += `📌 عملية ${i + 1} - (${now})\n`;
         if (credit > debit) {
             let diff = (credit - debit).toFixed(2);
             results += `${c1} له ${diff} دولار على ${c2}\n`;
@@ -72,8 +95,17 @@ function calculateAll() {
     }
 
     document.getElementById("results").innerText = results;
+
     let whatsappLink = "https://wa.me/?text=" + encodeURIComponent(results);
-    document.getElementById("results").innerHTML += `<br><a href="${whatsappLink}" target="_blank">مشاركة عبر واتساب</a>`;
+    document.getElementById("results").innerHTML += `<br><br><a href="${whatsappLink}" target="_blank">مشاركة عبر واتساب</a>`;
+}
+
+function printResults() {
+    const content = document.getElementById("results").innerHTML;
+    const w = window.open('', '', 'width=800,height=600');
+    w.document.write(`<html><head><title>نتائج المطابقة</title></head><body dir="rtl" style="font-family: Arial;">${content}</body></html>`);
+    w.document.close();
+    w.print();
 }
 </script>
 
